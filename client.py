@@ -1,9 +1,9 @@
 import click
 import socket
-from libchat import ChatSocket
+from libchat import ChatSocket, Message
 
 def prompt(username):
-    return f'[{username}]$ '
+    return f'[{username}]> '
 
 
 @click.command()
@@ -15,10 +15,12 @@ def chat(server, username):
     sock = ChatSocket()
     sock.connect(server, 8080)
 
+#     sock.mysend(Message(username, b'/join'))
+
     while True:
         msg = input(prompt(username)).encode()
         sock.mysend(msg)
-        print('Sent message')
+        
         resp = sock.myreceive()
         print(f'Received {resp}')
         

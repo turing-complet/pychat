@@ -1,5 +1,5 @@
 import socket
-from libchat import ChatSocket, Handler
+from libchat import ChatSocket, Handler, Broker
 
 host = 'localhost'
 port = 8080
@@ -14,12 +14,13 @@ def init():
 
 
 def listen(serversocket):
+    broker = Broker()
     while True:
         print('Accepting new connections..')
         (clientsocket, address) = serversocket.accept()
         print(f'New connection from {address}')
         chat_sock = ChatSocket(clientsocket)
-        Handler(chat_sock) # handle socket in new thread
+        Handler(chat_sock, broker) # handle socket in new thread
 
 
 if __name__=='__main__':
