@@ -11,7 +11,7 @@ port = 8081
 
 @click.command()
 @click.option('--server', '-s', default='localhost')
-@click.option('--username', default=None)
+@click.option('--username', '-u')
 def chat(server, username):
     
     print('Connecting to server..')

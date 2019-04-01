@@ -4,42 +4,51 @@ import pickle
 
 class Broker:
 
-    users = {} # user -> socket
     queue = {} # user -> messages
-    sessions = [] # pairs of users
+    conns = {} # { user1 -> { user2: socket } }
+    dest = {} # source socket id -> dest user
 
     def handle(self, sock):
         msg = sock.myreceive()
         print('Broker recv')
         message = Message.from_bytes(msg)
-        print('Broker deserialized')
-        self.users[message.from_user] = sock
 
-        self.flush_queue(message.from_user)
+        if message.command is not None:
+            self.handle_command(sock, message)
+            return
+
+        self.set_dest(sock, message)
+        if self.is_duplex(message.from_user, message.to_user):
+                self.flush_queue(message.from_user)
 
         if message.body is not None:
             self.handle_chat(message)
-
-        if message.command is not None:
-            self.handle_command(message)
         
 
     def handle_chat(self, message):
         print('Handle chat.. ')
-        if message.to_user not in self.users.keys():
-            self.queue_message(message)
-        else:
+        if self.is_duplex(message.from_user, message.to_user):
             self.forward(message)
+        else:
+            self.queue_message(message)
 
 
-    def handle_command(self, message):
+    def handle_command(self, sock, message):
         print('Handle command.. ')
         if message.command == '/help':
             return # TODO
+
         if message.command == '/chat':
-            self.sessions.append(set([message.from_user, message.to_user]))
+            print('Adding connection..')
+            self.add_connection(sock, message)
+
         if message.command == '/leave':
-            self.users.keys().remove(message.from_user)
+            return # TODO
+
+
+    def set_dest(self, sock, msg):
+        if id(sock) in self.dest.keys():
+            msg.to_user = self.dest[id(sock)]
             
 
     def flush_queue(self, to_user):
@@ -49,9 +58,32 @@ class Broker:
                 self.forward(msg)
 
 
+    def is_duplex(self, from_user, to_user):
+
+        if to_user in self.conns.keys() and from_user in self.conns.keys():
+            return from_user in self.conns[to_user].keys() \
+                and to_user in self.conns[from_user].keys()
+        return False
+
+
+    def add_connection(self, sock, msg):
+        to_user = msg.body # body of /chat command is other user
+        from_user = msg.from_user
+
+        if from_user not in self.conns.keys():
+            self.conns[from_user] = {}
+
+        if to_user not in self.conns.keys():
+            self.conns[to_user] = {}
+
+        self.conns[to_user][from_user] = sock
+        self.dest[id(sock)] = to_user
+        print(f'Connections: {self.conns}')
+        
+
     def forward(self, msg):
         print('Fwd.. ')
-        chat_sock = self.users[msg.to_user]
+        chat_sock = self.conns[msg.from_user][msg.to_user]
         chat_sock.mysend(msg.as_bytes())
         print(f'Forward from:{msg.from_user}, to:{msg.to_user}, body:{msg.body}')
 
@@ -61,7 +93,7 @@ class Broker:
         if to_user is None:
             return
 
-        if self.queue[to_user] == None:
+        if to_user not in self.queue.keys():
             self.queue[to_user] = [message]
         else:
             self.queue[to_user].append(message)
