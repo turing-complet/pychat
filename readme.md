@@ -1,0 +1,1 @@
+Bad implementation of two party chat

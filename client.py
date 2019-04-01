@@ -6,8 +6,8 @@ def prompt(username):
     return f'[{username}]> '
 
 
-commands = ['/chat', '/leave', '/help']
-port = 8081
+commands = ['/chat', '/leave', '/help', '/style']
+port = 8080
 
 @click.command()
 @click.option('--server', '-s', default='localhost')
@@ -22,20 +22,22 @@ def chat(server, username):
 
 
 def handle_recv(sock):
-    def _recv_loop():
+    def _get_message():
         msgbytes = sock.myreceive()
         msg = Message.from_bytes(msgbytes)
-        print(f'{prompt(msg.from_user)} {msg.body}')
-    return _recv_loop
+        click.secho(f'\n{prompt(msg.from_user)} {msg.body}\n', fg='green')
+    return _get_message
 
 
 def handle_send(username, sock):
-    def _send_loop():
-        while True:
-            text = input(prompt(username))
-            msg = build_message(username, text)
-            sock.mysend(msg.as_bytes())
-    return _send_loop
+    def _send():
+        # text = input(prompt(username))
+        text = click.prompt(click.style(prompt(username), fg='cyan'))
+        if (text == ""):
+            return
+        msg = build_message(username, text)
+        sock.mysend(msg.as_bytes())
+    return _send
 
 
 def build_message(username, user_input):

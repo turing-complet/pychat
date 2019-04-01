@@ -2,7 +2,7 @@ import socket
 from libchat import ChatSocket, ServerHandler, Broker
 
 host = 'localhost'
-port = 8081
+port = 8080
 
 def init():
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
