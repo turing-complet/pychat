@@ -1,8 +1,8 @@
 import socket
-from libchat import ChatSocket, ServerHandler, Broker
+from libchat import ChatSocket, ServerHandler, Broker, Logger
 
 host = 'localhost'
-port = 8080
+port = 8081
 
 def init():
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -25,4 +25,9 @@ def listen(serversocket):
 
 if __name__=='__main__':
     sock = init()
-    listen(sock)
+    try:
+        listen(sock)
+    except KeyboardInterrupt:
+        Logger.info('Shutting down..')
+    finally:
+        sock.close()

@@ -1,25 +1,26 @@
 import click
 import socket
-from libchat import ChatSocket, Message, ClientHandler
+from libchat import ChatSocket, Message, ClientHandler, Logger
 
 def prompt(username):
     return f'[{username}]> '
 
 
 commands = ['/chat', '/leave', '/help', '/style']
-port = 8080
+port = 8081
 
 @click.command()
 @click.option('--server', '-s', default='localhost')
 @click.option('--username', '-u')
 def chat(server, username):
     
-    print('Connecting to server..')
+    Logger.info('Connecting to server..')
+    # TODO: wait for server
+
     sock = ChatSocket()
     sock.connect(server, port)
     ClientHandler(handle_send(username, sock))
     ClientHandler(handle_recv(sock))
-
 
 def handle_recv(sock):
     def _get_message():
@@ -49,4 +50,9 @@ def build_message(username, user_input):
 
 
 if __name__=='__main__':
-    chat()
+    try:
+        chat()
+    except KeyboardInterrupt:
+        # TODO: why doesn't this write the log
+        Logger.info('Shutting down..')
+

@@ -177,6 +177,10 @@ class ChatSocket:
         self.sock.connect((host, port))
 
 
+    def close(self):
+        self.sock.close()
+
+        
     def mysend(self, msg):
         arr = bytearray(msg)
         arr.insert(0, len(msg))
